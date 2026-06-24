@@ -1,4 +1,11 @@
+import { getSession, isAdmin } from "../utils/auth.js";
+
 export function renderNavbar() {
+  const session = getSession();
+  const roleBadge = isAdmin()
+    ? `<span class="hidden rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-bold text-indigo-700 sm:inline-flex">Admin</span>`
+    : `<span class="hidden rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 sm:inline-flex">Fournisseur</span>`;
+
   return `
     <header class="fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:left-72">
       <div class="flex items-center gap-3">
@@ -7,12 +14,13 @@ export function renderNavbar() {
         </button>
         <div class="flex items-center gap-2 text-sm font-bold text-slate-500">
           <i class="fa-solid fa-house text-slate-400"></i>
-          <span id="navbarTitle">Catégories</span>
+          <span id="navbarTitle">Produits</span>
         </div>
       </div>
 
       <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+        ${roleBadge}
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500" title="${String(session?.email ?? "")}">
           <i class="fa-solid fa-user"></i>
         </div>
       </div>
