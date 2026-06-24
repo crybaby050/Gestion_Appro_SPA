@@ -1,21 +1,32 @@
 import { showToast } from "./components/toast.js";
 import { renderCategoriesPage } from "./pages/categoriesPage.js";
-import { renderProductsPage } from "./pages/productsPage.js"; 
+import { renderProductsPage } from "./pages/productsPage.js";
+import { renderFournisseursPage } from "./pages/fournisseursPage.js";
+import { requireAuth, isAdmin } from "./utils/auth.js";
 
 const routes = {
-  categories: renderCategoriesPage,
-  products: renderProductsPage, 
+  categories:   renderCategoriesPage,
+  products:     renderProductsPage,
+  fournisseurs: renderFournisseursPage,
 };
 
 const titles = {
-  categories: "Catégories",
-  products: "Produits",
-
+  categories:   "Catégories",
+  products:     "Produits",
+  fournisseurs: "Fournisseurs",
 };
 
-export async function navigate(page = "categories") {
-  const app = document.getElementById("app");
-  const route = routes[page] || routes.categories;
+export async function navigate(page = "products") {
+  // Guard : si pas de session → ne rien faire (app.js gère la loginPage)
+  if (!requireAuth()) return;
+
+  // Guard : fournisseur ne peut voir que products
+  if (!isAdmin() && page !== "products") {
+    return navigate("products");
+  }
+
+  const app    = document.getElementById("app");
+  const route  = routes[page] || routes.products;
 
   document.querySelectorAll("[data-page]").forEach((button) => {
     const isActive = button.dataset.page === page;
@@ -29,9 +40,7 @@ export async function navigate(page = "categories") {
   });
 
   const navbarTitle = document.getElementById("navbarTitle");
-  if (navbarTitle) {
-    navbarTitle.textContent = titles[page] || titles.categories;
-  }
+  if (navbarTitle) navbarTitle.textContent = titles[page] || page;
 
   app.innerHTML = `
     <div class="grid min-h-[50vh] place-items-center rounded-[2rem] border border-slate-200 bg-white p-10 text-center shadow-sm">
@@ -52,10 +61,6 @@ export async function navigate(page = "categories") {
         </div>
         <h1 class="text-2xl font-black tracking-tight text-slate-950">Erreur de chargement</h1>
         <p class="mt-2 text-sm leading-6 text-slate-600">${error.message}</p>
-        <p class="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-          Vérifie que JSON Server est bien lancé avec :
-          <strong class="font-black text-slate-950">npx json-server db.json --port 3000</strong>
-        </p>
       </section>
     `;
     showToast(error.message, "error");
