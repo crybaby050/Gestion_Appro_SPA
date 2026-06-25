@@ -71,3 +71,4 @@ export function startApp() {
 }
 
 startApp();
+window.addEventListener("app:login", () => startApp());

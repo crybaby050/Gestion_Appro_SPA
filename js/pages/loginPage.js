@@ -139,8 +139,7 @@ function bindLoginEvents() {
       showToast(`Bienvenue, ${user.email} !`);
 
       // Recharger l'app avec la session active
-      const { startApp } = await import("../app.js");
-      startApp();
+      window.dispatchEvent(new CustomEvent("app:login"));
 
     } catch (error) {
       showToast(error.message, "error");
