@@ -7,6 +7,7 @@ import { showToast } from "../components/toast.js";
 import { escapeHtml } from "../utils/html.js";
 import { getCategories } from "../services/categorieService.js";
 import { createFormValidator, Rules } from "../utils/formValidator.js";
+import { isAdmin } from "../utils/auth.js";
 import {
   createProduct,
   deleteProduct,
@@ -47,12 +48,12 @@ const PRODUCT_SCHEMA = {
 // ─── Corps du formulaire ──────────────────────────────────────────────────
 
 function productFormBody(product = null, categories = []) {
-  const libelle        = product?.libelle        || "";
-  const description    = product?.description    || "";
-  const prix           = product?.prix           || "";
-  const categorieId    = product?.categorieId    || "";
-  const imageUrl       = product?.imageUrl       || "";
-  const imagePublicId  = product?.imagePublicId  || "";
+  const libelle       = product?.libelle       || "";
+  const description   = product?.description   || "";
+  const prix          = product?.prix          || "";
+  const categorieId   = product?.categorieId   || "";
+  const imageUrl      = product?.imageUrl      || "";
+  const imagePublicId = product?.imagePublicId || "";
 
   const categoriesOptions = categories
     .map((cat) => `<option value="${cat.id}" ${cat.id == categorieId ? "selected" : ""}>${cat.libelle}</option>`)
@@ -178,9 +179,8 @@ function openProductForm(product = null, categories = []) {
 
     onConfirm: async (modal) => {
       const data = validator.validate();
-      if (!data) return false; // erreurs affichées, on bloque la fermeture
+      if (!data) return false;
 
-      // Les champs image sont gérés par setupImageUpload, on les ajoute manuellement
       data.imageUrl      = modal.querySelector("#productImageUrl").value;
       data.imagePublicId = modal.querySelector("#productImagePublicId").value;
 
@@ -206,7 +206,8 @@ function openProductForm(product = null, categories = []) {
 // ─── Rendu de la page ─────────────────────────────────────────────────────
 
 export async function renderProductsPage() {
-  const app = document.getElementById("app");
+  const app   = document.getElementById("app");
+  const admin = isAdmin(); // ← ajout
 
   const [products, categories] = await Promise.all([getProducts(), getCategories()]);
   const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c.libelle]));
@@ -217,8 +218,8 @@ export async function renderProductsPage() {
         kicker: "Catalogue",
         title: "Produits",
         subtitle: "Créer, modifier et supprimer les produits de l'application.",
-        actionLabel: "Nouveau produit",
-        actionId: "addProductBtn",
+        actionLabel: admin ? "Nouveau produit" : null, // ← modifié
+        actionId:    admin ? "addProductBtn"  : null,  // ← modifié
         actionIcon: "fa-plus",
       })}
 
@@ -264,7 +265,8 @@ export async function renderProductsPage() {
                   ? `<span class="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">${escapeHtml(categoryMap[p.categorieId])}</span>`
                   : `<span class="text-slate-300 italic">—</span>`,
             },
-            {
+            // ↓ colonne Actions uniquement pour l'admin
+            ...(admin ? [{
               label: "Actions",
               render: (p) => `
                 <div class="flex flex-wrap gap-2">
@@ -276,14 +278,14 @@ export async function renderProductsPage() {
                   </button>
                 </div>
               `,
-            },
+            }] : []),
           ],
         })}
       </article>
     </section>
   `;
 
-  bindProductEvents(products, categories);
+  if (admin) bindProductEvents(products, categories); // ← modifié
 }
 
 // ─── Événements ───────────────────────────────────────────────────────────
